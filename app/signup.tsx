@@ -1,7 +1,8 @@
-// app/login.tsx
+// app/signup.tsx
 import { auth } from '@/lib/firebase';
-import { Link } from 'expo-router';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
@@ -12,25 +13,30 @@ import {
     StyleSheet,
     Text,
     TextInput,
-    TouchableOpacity
+    TouchableOpacity,
 } from 'react-native';
 
-export default function LoginScreen() {
+export default function SignupScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
+  const handleSignup = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please enter both email and password.');
       return;
     }
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // The root layout observer will handle the redirect
+      await createUserWithEmailAndPassword(auth, email, password);
+      // On successful signup, Firebase automatically signs the user in.
+      // The root layout observer will handle redirecting to the main app.
+      // We can also dismiss the modal.
+      if (router.canGoBack()) {
+        router.back();
+      }
     } catch (error: any) {
-      Alert.alert('Login Failed', error.message);
+      Alert.alert('Signup Failed', error.message);
     } finally {
       setLoading(false);
     }
@@ -41,7 +47,7 @@ export default function LoginScreen() {
       style={styles.keyboardAvoidingView}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Welcome Back</Text>
+        <Text style={styles.title}>Create Account</Text>
         <TextInput
           style={styles.input}
           placeholder="Email"
@@ -62,24 +68,21 @@ export default function LoginScreen() {
         {loading ? (
           <ActivityIndicator size="large" color="#fff" />
         ) : (
-          <TouchableOpacity style={styles.button} onPress={handleLogin}>
-            <Text style={styles.buttonText}>Login</Text>
+          <TouchableOpacity style={styles.button} onPress={handleSignup}>
+            <Text style={styles.buttonText}>Sign Up</Text>
           </TouchableOpacity>
         )}
-        <Link href="/signup" asChild>
-          <TouchableOpacity style={styles.link}>
-            <Text style={styles.linkText}>Don't have an account? Sign Up</Text>
-          </TouchableOpacity>
-        </Link>
+        <StatusBar style="light" />
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
+// Reusing styles from Login for consistency
 const styles = StyleSheet.create({
   keyboardAvoidingView: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: '#181818',
   },
   container: {
     flexGrow: 1,
@@ -115,13 +118,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
-  },
-  link: {
-    marginTop: 20,
-  },
-  linkText: {
-    color: '#bb86fc',
-    textAlign: 'center',
-    fontSize: 16,
   },
 });

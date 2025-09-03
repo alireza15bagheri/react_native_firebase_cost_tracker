@@ -19,13 +19,16 @@ function RootLayoutNav() {
   useEffect(() => {
     if (loading) return;
 
-    const inTabsGroup = segments[0] === '(tabs)';
+    const inAuthGroup = segments[0] === '(tabs)';
 
-    if (user && !inTabsGroup) {
-      // User is signed in but not in the main app area, redirect to home.
+    // If the user is signed in and the initial segment is not the tab group,
+    // redirect them to the main tab screen.
+    if (user && !inAuthGroup) {
       router.replace('/(tabs)');
-    } else if (!user && inTabsGroup) {
-      // User is not signed in but somehow in the main app area, redirect to login.
+    }
+    // If the user is not signed in and the initial segment is in the tab group,
+    // redirect them to the login screen.
+    else if (!user && inAuthGroup) {
       router.replace('/login');
     }
   }, [user, segments, loading]);
@@ -35,6 +38,7 @@ function RootLayoutNav() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="login" options={{ headerShown: false }} />
       <Stack.Screen name="signup" options={{ presentation: 'modal', title: 'Create Account' }} />
+      <Stack.Screen name="+not-found" />
     </Stack>
   );
 }
