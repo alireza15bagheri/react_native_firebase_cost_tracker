@@ -1,0 +1,29 @@
+# Node/React Native
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.expo/
+.expo-shared/
+
+# macOS / IDE
+.DS_Store
+.idea/
+*.iml
+
+# iOS
+ios/Pods/
+ios/build/
+
+# Android
+android/.gradle/
+android/.idea/
+android/app/build/
+android/build/
+
+# Env and keys
+.env
+.env.*
+*.keystore
+*.jks
+android/app/*keystore*
+
