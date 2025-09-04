@@ -32,3 +32,11 @@ export interface DailyCost {
   date: string; // YYYY-MM-DD
   spent: number;
 }
+
+export interface MiscellaneousCost {
+  id: string;
+  periodId: string;
+  userId: string;
+  title: string;
+  amount: number;
+}

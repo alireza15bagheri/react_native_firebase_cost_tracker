@@ -35,41 +35,21 @@ export const updatePeriodDailyLimit = async (periodId: string, daily_limit: numb
 };
 
 export const deletePeriod = async (periodId: string, userId: string) => {
-  // Firestore security rules for batched writes can be tricky.
-  // A more reliable pattern is to fetch the documents to be deleted first,
-  // then add them to a batch.
-  // 1. Find associated incomes
-  const incomesQuery = query(
-    collection(db, 'incomes'),
-    where('userId', '==', userId),
-    where('periodId', '==', periodId)
-  );
-  const incomesSnapshot = await getDocs(incomesQuery);
-
-  // 2. Find associated budgets
-  const budgetsQuery = query(
-    collection(db, 'budgets'),
-    where('userId', '==', userId),
-    where('periodId', '==', periodId)
-  );
-  const budgetsSnapshot = await getDocs(budgetsQuery);
-
-  // 3. Find associated daily costs
-  const dailyCostsQuery = query(
-    collection(db, 'daily_costs'),
-    where('userId', '==', userId),
-    where('periodId', '==', periodId)
-  );
-  const dailyCostsSnapshot = await getDocs(dailyCostsQuery);
-
-  // 4. Create a batch and add all delete operations
   const batch = writeBatch(db);
-  incomesSnapshot.forEach((doc) => batch.delete(doc.ref));
-  budgetsSnapshot.forEach((doc) => batch.delete(doc.ref));
-  dailyCostsSnapshot.forEach((doc) => batch.delete(doc.ref));
+
+  const collectionsToDelete = ['incomes', 'budgets', 'daily_costs', 'miscellaneous_costs'];
+  for (const coll of collectionsToDelete) {
+    const q = query(
+      collection(db, coll),
+      where('userId', '==', userId),
+      where('periodId', '==', periodId)
+    );
+    const snapshot = await getDocs(q);
+    snapshot.forEach((doc) => batch.delete(doc.ref));
+  }
+
   batch.delete(doc(db, 'periods', periodId));
 
-  // 5. Commit the batch
   await batch.commit();
 };
 // --- Incomes ---
@@ -143,4 +123,29 @@ export const getDailyCostsForPeriod = async (userId: string, periodId: string) =
 
 export const deleteDailyCost = async (costId: string) => {
   await deleteDoc(doc(db, 'daily_costs', costId));
+};
+
+// --- Miscellaneous Costs ---
+export const addMiscellaneousCost = async (costData: {
+  periodId: string;
+  title: string;
+  amount: number;
+  userId: string;
+}) => {
+  const docRef = await addDoc(collection(db, 'miscellaneous_costs'), costData);
+  return { id: docRef.id, ...costData };
+};
+
+export const getMiscellaneousCostsForPeriod = async (userId: string, periodId: string) => {
+  const q = query(
+    collection(db, 'miscellaneous_costs'),
+    where('userId', '==', userId),
+    where('periodId', '==', periodId)
+  );
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+};
+
+export const deleteMiscellaneousCost = async (costId: string) => {
+  await deleteDoc(doc(db, 'miscellaneous_costs', costId));
 };

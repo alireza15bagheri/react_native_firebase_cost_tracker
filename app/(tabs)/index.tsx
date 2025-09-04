@@ -20,7 +20,7 @@ export default function DashboardScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const [modalVisible, setModalVisible] = useState<
-    'period' | 'income' | 'budget' | 'dailyLimit' | 'dailyCost' | null
+    'period' | 'income' | 'budget' | 'dailyLimit' | 'dailyCost' | 'miscellaneousCost' | null
   >(null);
 
   const {
@@ -35,6 +35,8 @@ export default function DashboardScreen() {
     setBudgets,
     dailyCosts,
     setDailyCosts,
+    miscellaneousCosts,
+    setMiscellaneousCosts,
     loading,
     loadingData,
     handleSetDailyLimit,
@@ -42,6 +44,7 @@ export default function DashboardScreen() {
     handleDeleteIncome,
     handleDeleteBudget,
     handleDeleteDailyCost,
+    handleDeleteMiscellaneousCost,
   } = useDashboardData();
 
   useEffect(() => {
@@ -56,7 +59,6 @@ export default function DashboardScreen() {
     });
   }, [navigation]);
 
-  // Listens for the instruction from the drawer menu to open the 'New Period' modal
   useEffect(() => {
     if (params.openNewPeriodModal) {
       setModalVisible('period');
@@ -64,25 +66,29 @@ export default function DashboardScreen() {
     }
   }, [params]);
 
-  const { activePeriod, remainderAmount, finalRemainder } = useMemo(() => {
+  const { activePeriod, remainderAmount, dailyCostRemainder, finalRemainder } = useMemo(() => {
     const period = periods.find((p) => p.id === activePeriodId);
     const tIncomes = incomes.reduce((sum, income) => sum + income.amount, 0);
     const tBudgets = budgets.reduce((sum, budget) => sum + budget.amount_allocated, 0);
-    const remainder = tIncomes - tBudgets;
+    const remainderAfterBudgets = tIncomes - tBudgets;
 
-    let final = remainder;
+    let remainderAfterDaily = remainderAfterBudgets;
     if (period) {
       const daysInPeriod = getDaysInPeriod(period.start_date, period.end_date);
       const totalDailyLimit = (period.daily_limit || 0) * daysInPeriod;
-      final = remainder - totalDailyLimit;
+      remainderAfterDaily = remainderAfterBudgets - totalDailyLimit;
     }
+
+    const tMiscellaneousCosts = miscellaneousCosts.reduce((sum, cost) => sum + cost.amount, 0);
+    const final = remainderAfterDaily - tMiscellaneousCosts;
 
     return {
       activePeriod: period,
-      remainderAmount: remainder,
+      remainderAmount: remainderAfterBudgets,
+      dailyCostRemainder: remainderAfterDaily,
       finalRemainder: final,
     };
-  }, [incomes, budgets, periods, activePeriodId]);
+  }, [incomes, budgets, periods, activePeriodId, miscellaneousCosts]);
 
   return (
     <ThemedView style={styles.safeArea}>
@@ -150,6 +156,30 @@ export default function DashboardScreen() {
                       <Text
                         style={[
                           styles.summaryAmount,
+                          { color: dailyCostRemainder >= 0 ? '#4caf50' : '#f44336' },
+                        ]}>
+                        {formatAmount(dailyCostRemainder)}
+                      </Text>
+                    </View>
+
+                    <TransactionList
+                      title="Miscellaneous Costs"
+                      items={miscellaneousCosts.map((c) => ({
+                        id: c.id,
+                        name: c.title,
+                        amount: c.amount,
+                      }))}
+                      emptyMessage="No miscellaneous costs added."
+                      onDelete={handleDeleteMiscellaneousCost}
+                      onAddItem={() => setModalVisible('miscellaneousCost')}
+                      addItemButtonText="+ Add Miscellaneous Cost"
+                    />
+
+                    <View style={styles.summaryContainer}>
+                      <Text style={styles.summaryText}>Final Remainder:</Text>
+                      <Text
+                        style={[
+                          styles.summaryAmount,
                           { color: finalRemainder >= 0 ? '#4caf50' : '#f44336' },
                         ]}>
                         {formatAmount(finalRemainder)}
@@ -180,6 +210,9 @@ export default function DashboardScreen() {
         }}
         onDailyCostAdded={(newCost) => {
           setDailyCosts((prev) => [...prev, newCost]);
+        }}
+        onMiscellaneousCostAdded={(newCost) => {
+          setMiscellaneousCosts((prev) => [...prev, newCost]);
         }}
         onSetDailyLimit={handleSetDailyLimit}
       />

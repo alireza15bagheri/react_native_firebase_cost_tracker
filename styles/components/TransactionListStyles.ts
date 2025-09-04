@@ -48,4 +48,16 @@ export const styles = StyleSheet.create({
     color: '#ff453a',
     fontSize: 18,
   },
+  addNewButton: {
+    backgroundColor: '#6200ee',
+    padding: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 15,
+  },
+  addNewButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 });

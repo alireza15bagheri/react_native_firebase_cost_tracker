@@ -1,15 +1,16 @@
 // components/dashboard/DashboardModals.tsx
-import { Budget, DailyCost, Income, Period } from '@/types/data';
+import { Budget, DailyCost, Income, MiscellaneousCost, Period } from '@/types/data';
 import { User } from 'firebase/auth';
 import AddBudgetForm from '../forms/AddBudgetForm';
 import AddDailyCostForm from '../forms/AddDailyCostForm';
 import AddIncomeForm from '../forms/AddIncomeForm';
+import AddMiscellaneousCostForm from '../forms/AddMiscellaneousCostForm';
 import AddPeriodForm from '../forms/AddPeriodForm';
 import SetDailyLimitForm from '../forms/SetDailyLimitForm';
 import AppModal from '../ui/AppModal';
 
 interface DashboardModalsProps {
-  modalVisible: 'period' | 'income' | 'budget' | 'dailyLimit' | 'dailyCost' | null;
+  modalVisible: 'period' | 'income' | 'budget' | 'dailyLimit' | 'dailyCost' | 'miscellaneousCost' | null;
   onClose: () => void;
   user: User | null;
   activePeriod: Period | undefined;
@@ -17,6 +18,7 @@ interface DashboardModalsProps {
   onIncomeAdded: (income: Income) => void;
   onBudgetAdded: (budget: Budget) => void;
   onDailyCostAdded: (cost: DailyCost) => void;
+  onMiscellaneousCostAdded: (cost: MiscellaneousCost) => void;
   onSetDailyLimit: (periodId: string, limit: number) => Promise<void>;
 }
 
@@ -29,6 +31,7 @@ export default function DashboardModals({
   onIncomeAdded,
   onBudgetAdded,
   onDailyCostAdded,
+  onMiscellaneousCostAdded,
   onSetDailyLimit,
 }: DashboardModalsProps) {
   return (
@@ -65,6 +68,14 @@ export default function DashboardModals({
           userId={user.uid}
           period={activePeriod}
           onCostAdded={onDailyCostAdded}
+          onClose={onClose}
+        />
+      )}
+      {modalVisible === 'miscellaneousCost' && user && activePeriod && (
+        <AddMiscellaneousCostForm
+          userId={user.uid}
+          periodId={activePeriod.id}
+          onCostAdded={onMiscellaneousCostAdded}
           onClose={onClose}
         />
       )}

@@ -4,14 +4,16 @@ import {
   deleteBudget,
   deleteDailyCost,
   deleteIncome,
+  deleteMiscellaneousCost,
   deletePeriod,
   getBudgetsForPeriod,
   getDailyCostsForPeriod,
   getIncomesForPeriod,
+  getMiscellaneousCostsForPeriod,
   getPeriods,
   updatePeriodDailyLimit,
 } from '@/lib/firebase-service';
-import { Budget, DailyCost, Income, Period } from '@/types/data';
+import { Budget, DailyCost, Income, MiscellaneousCost, Period } from '@/types/data';
 import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 
@@ -23,6 +25,7 @@ export default function useDashboardData() {
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [dailyCosts, setDailyCosts] = useState<DailyCost[]>([]);
+  const [miscellaneousCosts, setMiscellaneousCosts] = useState<MiscellaneousCost[]>([]);
   const [loadingData, setLoadingData] = useState(false);
   useEffect(() => {
     if (user) {
@@ -31,11 +34,12 @@ export default function useDashboardData() {
   }, [user]);
   useEffect(() => {
     if (user && activePeriodId) {
-      fetchIncomesAndBudgets(activePeriodId);
+      fetchPeriodData(activePeriodId);
     } else {
       setIncomes([]);
       setBudgets([]);
       setDailyCosts([]);
+      setMiscellaneousCosts([]);
     }
   }, [user, activePeriodId]);
   const fetchPeriods = async () => {
@@ -45,7 +49,6 @@ export default function useDashboardData() {
       const userPeriods = (await getPeriods(user.uid)) as Period[];
       setPeriods(userPeriods);
       if (userPeriods.length > 0) {
-        // Find if the active period still exists, otherwise default to the first
         const currentActiveExists = userPeriods.some((p) => p.id === activePeriodId);
         if (!currentActiveExists) {
           setActivePeriodId(userPeriods[0].id);
@@ -59,20 +62,22 @@ export default function useDashboardData() {
       setLoading(false);
     }
   };
-  const fetchIncomesAndBudgets = async (periodId: string) => {
+  const fetchPeriodData = async (periodId: string) => {
     if (!user) return;
     setLoadingData(true);
     try {
-      const [userIncomes, userBudgets, userDailyCosts] = await Promise.all([
+      const [userIncomes, userBudgets, userDailyCosts, userMiscCosts] = await Promise.all([
         getIncomesForPeriod(user.uid, periodId),
         getBudgetsForPeriod(user.uid, periodId),
         getDailyCostsForPeriod(user.uid, periodId),
+        getMiscellaneousCostsForPeriod(user.uid, periodId),
       ]);
       setIncomes(userIncomes as Income[]);
       setBudgets(userBudgets as Budget[]);
       setDailyCosts(userDailyCosts as DailyCost[]);
+      setMiscellaneousCosts(userMiscCosts as MiscellaneousCost[]);
     } catch (error) {
-      console.error('Failed to fetch incomes/budgets/costs:', error);
+      console.error('Failed to fetch period data:', error);
     } finally {
       setLoadingData(false);
     }
@@ -81,7 +86,6 @@ export default function useDashboardData() {
   const handleSetDailyLimit = async (periodId: string, limit: number) => {
     try {
       await updatePeriodDailyLimit(periodId, limit);
-      // Refetch periods to get the updated data
       await fetchPeriods();
       Alert.alert('Success', 'Daily limit updated successfully.');
     } catch (error) {
@@ -171,6 +175,24 @@ export default function useDashboardData() {
     ]);
   };
 
+  const handleDeleteMiscellaneousCost = (costId: string) => {
+    Alert.alert('Delete Miscellaneous Cost', 'Are you sure?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteMiscellaneousCost(costId);
+            setMiscellaneousCosts((prev) => prev.filter((c) => c.id !== costId));
+          } catch (error) {
+            Alert.alert('Error', 'Failed to delete miscellaneous cost.');
+          }
+        },
+      },
+    ]);
+  };
+
   return {
     user,
     periods,
@@ -183,6 +205,8 @@ export default function useDashboardData() {
     setBudgets,
     dailyCosts,
     setDailyCosts,
+    miscellaneousCosts,
+    setMiscellaneousCosts,
     loading,
     loadingData,
     handleSetDailyLimit,
@@ -190,5 +214,6 @@ export default function useDashboardData() {
     handleDeleteIncome,
     handleDeleteBudget,
     handleDeleteDailyCost,
+    handleDeleteMiscellaneousCost,
   };
 }

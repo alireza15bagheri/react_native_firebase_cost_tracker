@@ -14,6 +14,8 @@ interface TransactionListProps {
   items: TransactionItem[];
   emptyMessage: string;
   onDelete: (id: string) => void;
+  onAddItem?: () => void;
+  addItemButtonText?: string;
 }
 
 export default function TransactionList({
@@ -21,6 +23,8 @@ export default function TransactionList({
   items,
   emptyMessage,
   onDelete,
+  onAddItem,
+  addItemButtonText,
 }: TransactionListProps) {
   const renderItem = ({ item }: { item: TransactionItem }) => (
     <View style={styles.itemContainer}>
@@ -48,6 +52,11 @@ export default function TransactionList({
           keyExtractor={(item) => item.id}
           scrollEnabled={false}
         />
+      )}
+      {onAddItem && addItemButtonText && (
+        <TouchableOpacity style={styles.addNewButton} onPress={onAddItem}>
+          <Text style={styles.addNewButtonText}>{addItemButtonText}</Text>
+        </TouchableOpacity>
       )}
     </View>
   );
