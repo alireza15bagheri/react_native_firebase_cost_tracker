@@ -7,16 +7,23 @@ import IncomeList from '@/components/IncomeList';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import useDashboardData from '@/hooks/useDashboardData';
+import { styles } from '@/styles/screens/DashboardStyles';
 import { DrawerActions, useNavigation } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, SafeAreaView, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+
+const formatAmount = (amount: number) => {
+  // Round the number to the nearest whole number.
+  const numAsString = Math.round(amount).toString();
+  // Use a regular expression to insert commas as thousands separators from the right.
+  return numAsString.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+};
 
 export default function DashboardScreen() {
   const navigation = useNavigation();
   const params = useLocalSearchParams();
   const router = useRouter();
-
   const [modalVisible, setModalVisible] = useState<'period' | 'income' | 'budget' | null>(null);
 
   const {
@@ -56,10 +63,20 @@ export default function DashboardScreen() {
     }
   }, [params]);
 
+  const { totalIncomes, totalBudgets, remainderAmount } = useMemo(() => {
+    const tIncomes = incomes.reduce((sum, income) => sum + income.amount, 0);
+    const tBudgets = budgets.reduce((sum, budget) => sum + budget.amount_allocated, 0);
+    return {
+      totalIncomes: tIncomes,
+      totalBudgets: tBudgets,
+      remainderAmount: tIncomes - tBudgets,
+    };
+  }, [incomes, budgets]);
+
   return (
     <ThemedView style={styles.safeArea}>
-      <SafeAreaView>
-        <ScrollView style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.container}>
           <DashboardHeader
             activePeriodId={activePeriodId}
             onAddIncome={() => setModalVisible('income')}
@@ -84,6 +101,16 @@ export default function DashboardScreen() {
                   <>
                     <IncomeList incomes={incomes} onDelete={handleDeleteIncome} />
                     <BudgetList budgets={budgets} onDelete={handleDeleteBudget} />
+                    <View style={styles.summaryContainer}>
+                      <Text style={styles.summaryText}>Remaining after Budgets Costs:</Text>
+                      <Text
+                        style={[
+                          styles.summaryAmount,
+                          { color: remainderAmount >= 0 ? '#4caf50' : '#f44336' },
+                        ]}>
+                        {formatAmount(remainderAmount)}
+                      </Text>
+                    </View>
                   </>
                 )
               )}
@@ -111,13 +138,3 @@ export default function DashboardScreen() {
     </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  container: {
-    height: '100%',
-    padding: 20,
-  },
-});

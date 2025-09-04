@@ -8,7 +8,10 @@ interface BudgetListProps {
 }
 
 const formatAmount = (amount: number) => {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+  // Round the number to the nearest whole number.
+  const numAsString = Math.round(amount).toString();
+  // Use a regular expression to insert commas as thousands separators from the right.
+  return numAsString.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
 
 export default function BudgetList({ budgets, onDelete }: BudgetListProps) {
