@@ -71,6 +71,26 @@ export const styles = StyleSheet.create({
     width: '100%',
     transitionDuration: '0.2s',
   },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2b2b2b',
+    borderRadius: 10,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#444',
+    width: '100%',
+    paddingHorizontal: 15,
+  },
+  inputField: {
+    flex: 1,
+    color: '#fff',
+    paddingVertical: 15,
+    fontSize: 16,
+  },
+  eyeIcon: {
+    padding: 5,
+  },
   inputFocused: {
     borderColor: '#bb86fc',
   },

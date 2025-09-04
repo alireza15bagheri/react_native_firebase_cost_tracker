@@ -1,6 +1,7 @@
 // app/signup.tsx
 import { auth } from '@/lib/firebase';
 import { styles } from '@/styles/screens/AuthStyles';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -14,12 +15,14 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  View,
 } from 'react-native';
 
 export default function SignupScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const handleSignup = async () => {
     if (!email || !password) {
@@ -57,14 +60,26 @@ export default function SignupScreen() {
           keyboardType="email-address"
           placeholderTextColor="#888"
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          placeholderTextColor="#888"
-        />
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.inputField}
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!isPasswordVisible}
+            placeholderTextColor="#888"
+          />
+          <TouchableOpacity
+            onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+            style={styles.eyeIcon}>
+            <MaterialIcons
+              name={isPasswordVisible ? 'visibility-off' : 'visibility'}
+              size={24}
+              color="#888"
+            />
+          </TouchableOpacity>
+        </View>
+
         {loading ? (
           <ActivityIndicator size="large" color="#fff" />
         ) : (

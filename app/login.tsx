@@ -1,6 +1,7 @@
 // app/login.tsx
 import { auth } from '@/lib/firebase';
 import { styles } from '@/styles/screens/AuthStyles';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Link } from 'expo-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import React, { useState } from 'react';
@@ -13,12 +14,14 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  View,
 } from 'react-native';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -28,7 +31,6 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // The root layout observer will handle the redirect
     } catch (error: any) {
       Alert.alert('Login Failed', error.message);
     } finally {
@@ -51,14 +53,26 @@ export default function LoginScreen() {
           keyboardType="email-address"
           placeholderTextColor="#888"
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          placeholderTextColor="#888"
-        />
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.inputField}
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!isPasswordVisible}
+            placeholderTextColor="#888"
+          />
+          <TouchableOpacity
+            onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+            style={styles.eyeIcon}>
+            <MaterialIcons
+              name={isPasswordVisible ? 'visibility-off' : 'visibility'}
+              size={24}
+              color="#888"
+            />
+          </TouchableOpacity>
+        </View>
+
         {loading ? (
           <ActivityIndicator size="large" color="#fff" />
         ) : (

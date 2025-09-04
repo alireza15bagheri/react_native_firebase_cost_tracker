@@ -29,6 +29,25 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#333',
   },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1e1e1e',
+    borderRadius: 10,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#333',
+    paddingHorizontal: 15,
+  },
+  inputField: {
+    flex: 1,
+    color: '#fff',
+    paddingVertical: 15,
+    fontSize: 16,
+  },
+  eyeIcon: {
+    padding: 5,
+  },
   button: {
     backgroundColor: '#6200ee',
     padding: 15,

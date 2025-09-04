@@ -3,6 +3,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { useAuth } from '@/context/AuthContext';
 import { auth } from '@/lib/firebase';
 import { styles } from '@/styles/screens/SettingsStyles';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { BlurView } from 'expo-blur';
 import { signOut, updatePassword } from 'firebase/auth';
 import React, { useState } from 'react';
@@ -24,11 +25,12 @@ export default function SettingsScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  const [isNewPasswordVisible, setIsNewPasswordVisible] = useState(false);
+  const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      // The auth state listener in the root layout will handle the redirect.
     } catch (error: any) {
       Alert.alert('Error', error.message);
     }
@@ -56,7 +58,6 @@ export default function SettingsScreen() {
       setNewPassword('');
       setConfirmPassword('');
     } catch (error: any) {
-      // This error often means the user needs to sign in again to perform this sensitive action.
       Alert.alert(
         'Error',
         'This operation is sensitive and requires recent authentication. Please log out and log back in to change your password.'
@@ -90,31 +91,64 @@ export default function SettingsScreen() {
         <BlurView intensity={50} tint="dark" style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Change Password</Text>
-            <TextInput
-              style={[styles.input, focusedInput === 'new' && styles.inputFocused]}
-              placeholder="New Password"
-              secureTextEntry
-              value={newPassword}
-              onChangeText={setNewPassword}
-              placeholderTextColor="#888"
-              onFocus={() => setFocusedInput('new')}
-              onBlur={() => setFocusedInput(null)}
-            />
-            <TextInput
-              style={[styles.input, focusedInput === 'confirm' && styles.inputFocused]}
-              placeholder="Confirm New Password"
-              secureTextEntry
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              placeholderTextColor="#888"
-              onFocus={() => setFocusedInput('confirm')}
-              onBlur={() => setFocusedInput(null)}
-            />
+            <View
+              style={[
+                styles.inputContainer,
+                focusedInput === 'new' && styles.inputFocused,
+              ]}>
+              <TextInput
+                style={styles.inputField}
+                placeholder="New Password"
+                secureTextEntry={!isNewPasswordVisible}
+                value={newPassword}
+                onChangeText={setNewPassword}
+                placeholderTextColor="#888"
+                onFocus={() => setFocusedInput('new')}
+                onBlur={() => setFocusedInput(null)}
+              />
+              <TouchableOpacity
+                onPress={() => setIsNewPasswordVisible(!isNewPasswordVisible)}
+                style={styles.eyeIcon}>
+                <MaterialIcons
+                  name={isNewPasswordVisible ? 'visibility-off' : 'visibility'}
+                  size={24}
+                  color="#888"
+                />
+              </TouchableOpacity>
+            </View>
+            <View
+              style={[
+                styles.inputContainer,
+                focusedInput === 'confirm' && styles.inputFocused,
+              ]}>
+              <TextInput
+                style={styles.inputField}
+                placeholder="Confirm New Password"
+                secureTextEntry={!isConfirmPasswordVisible}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                placeholderTextColor="#888"
+                onFocus={() => setFocusedInput('confirm')}
+                onBlur={() => setFocusedInput(null)}
+              />
+              <TouchableOpacity
+                onPress={() => setIsConfirmPasswordVisible(!isConfirmPasswordVisible)}
+                style={styles.eyeIcon}>
+                <MaterialIcons
+                  name={isConfirmPasswordVisible ? 'visibility-off' : 'visibility'}
+                  size={24}
+                  color="#888"
+                />
+              </TouchableOpacity>
+            </View>
+
             {loading ? (
               <ActivityIndicator size="large" color="#fff" />
             ) : (
               <View style={styles.modalButtonContainer}>
-                <TouchableOpacity style={styles.modalButton} onPress={handlePasswordChange}>
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={handlePasswordChange}>
                   <Text style={styles.modalButtonText}>Save Changes</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
