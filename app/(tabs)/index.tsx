@@ -4,6 +4,7 @@ import AddBudgetForm from '@/components/forms/AddBudgetForm';
 import AddIncomeForm from '@/components/forms/AddIncomeForm';
 import AddPeriodForm from '@/components/forms/AddPeriodForm';
 import IncomeList from '@/components/IncomeList';
+import { ThemedView } from '@/components/ThemedView';
 import AppModal from '@/components/ui/AppModal';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useAuth } from '@/context/AuthContext';
@@ -35,7 +36,7 @@ export default function DashboardScreen() {
   const { user } = useAuth();
   const navigation = useNavigation();
   const params = useLocalSearchParams();
-  const router = useRouter(); // <-- Import useRouter
+  const router = useRouter();
 
   const [periods, setPeriods] = useState<Period[]>([]);
   const [activePeriodId, setActivePeriodId] = useState<string | null>(null);
@@ -180,68 +181,78 @@ export default function DashboardScreen() {
     ]);
   };
 
+  const activePeriod = periods.find((p) => p.id === activePeriodId);
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container}>
-        <Text style={styles.subtitle}>Welcome, {user ? user.email : 'Guest'}!</Text>
+    <ThemedView style={styles.safeArea}>
+      <SafeAreaView>
+        <ScrollView style={styles.container}>
+          <View style={styles.welcomeContainer}>
+            <Text style={styles.welcomeText}>Welcome,</Text>
+            <Text style={styles.welcomeUserText}>{user ? user.email : 'Guest'}</Text>
+          </View>
 
-        {loading ? (
-          <ActivityIndicator size="large" color="#fff" style={{ marginTop: 20 }} />
-        ) : (
-          <>
-            <View style={styles.actionButtons}>
-              <TouchableOpacity
-                style={[styles.actionButton, !activePeriodId && styles.disabledButton]}
-                disabled={!activePeriodId}
-                onPress={() => setModalVisible('income')}>
-                <Text style={styles.actionButtonText}>+ Add Income</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.actionButton, !activePeriodId && styles.disabledButton]}
-                disabled={!activePeriodId}
-                onPress={() => setModalVisible('budget')}>
-                <Text style={styles.actionButtonText}>+ Add Budget</Text>
-              </TouchableOpacity>
-            </View>
-
-            {periods.length > 0 && activePeriodId ? (
-              <View style={styles.periodSelectorContainer}>
-                <View style={styles.pickerContainer}>
-                  <Picker
-                    selectedValue={activePeriodId}
-                    onValueChange={(itemValue) => setActivePeriodId(itemValue)}
-                    style={styles.picker}
-                    itemStyle={styles.pickerItem}>
-                    {periods.map((period) => (
-                      <Picker.Item
-                        key={period.id}
-                        label={`${period.name} (${period.start_date} to ${period.end_date})`}
-                        value={period.id}
-                      />
-                    ))}
-                  </Picker>
-                </View>
-                <TouchableOpacity onPress={handleDeletePeriod} style={styles.deletePeriodButton}>
-                  <Text style={styles.deletePeriodButtonText}>Delete Period</Text>
+          {loading ? (
+            <ActivityIndicator size="large" color="#fff" style={{ marginTop: 20 }} />
+          ) : (
+            <>
+              <View style={styles.actionButtons}>
+                <TouchableOpacity
+                  style={[styles.actionButton, !activePeriodId && styles.disabledButton]}
+                  disabled={!activePeriodId}
+                  onPress={() => setModalVisible('income')}>
+                  <Text style={styles.actionButtonText}>+ Add Income</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.actionButton, !activePeriodId && styles.disabledButton]}
+                  disabled={!activePeriodId}
+                  onPress={() => setModalVisible('budget')}>
+                  <Text style={styles.actionButtonText}>+ Add Budget</Text>
                 </TouchableOpacity>
               </View>
-            ) : (
-              <Text style={styles.emptyText}>No periods found. Use the side menu to add one.</Text>
-            )}
 
-            {loadingData ? (
-              <ActivityIndicator size="large" color="#fff" style={{ marginTop: 20 }} />
-            ) : (
-              activePeriodId && (
-                <>
-                  <IncomeList incomes={incomes} onDelete={handleDeleteIncome} />
-                  <BudgetList budgets={budgets} onDelete={handleDeleteBudget} />
-                </>
-              )
-            )}
-          </>
-        )}
-      </ScrollView>
+              {periods.length > 0 && activePeriodId ? (
+                <View style={styles.periodSelectorContainer}>
+                  <View style={styles.pickerContainer}>
+                    <Picker
+                      selectedValue={activePeriodId}
+                      onValueChange={(itemValue) => setActivePeriodId(itemValue)}
+                      style={styles.picker}
+                      itemStyle={styles.pickerItem}>
+                      {periods.map((period) => (
+                        <Picker.Item key={period.id} label={period.name} value={period.id} />
+                      ))}
+                    </Picker>
+                  </View>
+                  {activePeriod && (
+                    <Text style={styles.periodDateText}>
+                      {activePeriod.start_date} - {activePeriod.end_date}
+                    </Text>
+                  )}
+                  <TouchableOpacity onPress={handleDeletePeriod} style={styles.deletePeriodButton}>
+                    <Text style={styles.deletePeriodButtonText}>Delete Period</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <Text style={styles.emptyText}>
+                  No periods found. Use the side menu to add one.
+                </Text>
+              )}
+
+              {loadingData ? (
+                <ActivityIndicator size="large" color="#fff" style={{ marginTop: 20 }} />
+              ) : (
+                activePeriodId && (
+                  <>
+                    <IncomeList incomes={incomes} onDelete={handleDeleteIncome} />
+                    <BudgetList budgets={budgets} onDelete={handleDeleteBudget} />
+                  </>
+                )
+              )}
+            </>
+          )}
+        </ScrollView>
+      </SafeAreaView>
 
       {/* Modals for adding data */}
       <AppModal visible={!!modalVisible} onClose={() => setModalVisible(null)}>
@@ -276,23 +287,31 @@ export default function DashboardScreen() {
           />
         )}
       </AppModal>
-    </SafeAreaView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#000',
   },
   container: {
-    flex: 1,
+    height: '100%',
     padding: 20,
   },
-  subtitle: {
+  welcomeContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  welcomeText: {
     fontSize: 18,
     color: '#999',
-    marginBottom: 20,
+  },
+  welcomeUserText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginTop: 4,
   },
   actionButtons: {
     flexDirection: 'row',
@@ -329,6 +348,12 @@ const styles = StyleSheet.create({
   pickerItem: {
     color: '#fff',
     backgroundColor: '#1e1e1e',
+  },
+  periodDateText: {
+    color: '#999',
+    textAlign: 'center',
+    marginTop: 8,
+    fontSize: 14,
   },
   deletePeriodButton: {
     backgroundColor: '#ff453a',

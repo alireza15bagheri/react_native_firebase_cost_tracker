@@ -1,19 +1,20 @@
 // app/(tabs)/settings.tsx
+import { ThemedView } from '@/components/ThemedView';
 import { useAuth } from '@/context/AuthContext';
 import { auth } from '@/lib/firebase';
 import { BlurView } from 'expo-blur';
 import { signOut, updatePassword } from 'firebase/auth';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Modal,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Modal,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 export default function SettingsScreen() {
@@ -66,18 +67,20 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Settings</Text>
+    <ThemedView style={styles.safeArea}>
+      <SafeAreaView>
+        <View style={styles.container}>
+          <Text style={styles.title}>Settings</Text>
 
-        <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
-          <Text style={styles.buttonText}>Change Password</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
+            <Text style={styles.buttonText}>Change Password</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutButtonText}>Logout</Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Text style={styles.logoutButtonText}>Logout</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
 
       <Modal
         animationType="fade"
@@ -124,17 +127,16 @@ export default function SettingsScreen() {
           </View>
         </BlurView>
       </Modal>
-    </SafeAreaView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#000',
   },
   container: {
-    flex: 1,
+    height: '100%',
     padding: 20,
   },
   title: {
@@ -221,7 +223,7 @@ const styles = StyleSheet.create({
   },
   modalButtonText: {
     color: '#fff',
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: 'bold',
   },
 });
