@@ -58,6 +58,7 @@ const styles = StyleSheet.create({
   },
   drawerItemText: {
     color: '#fff',
+    marginVertical: 5,
     fontSize: 18,
   },
   logoutButton: {

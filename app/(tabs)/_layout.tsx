@@ -8,9 +8,9 @@ import { Alert } from 'react-native';
 
 // This is required for the drawer navigator to work
 import 'react-native-gesture-handler';
-
 export default function AppLayout() {
-  const { user } = useAuth(); // We'll need this to pass to the dashboard
+  const { user } = useAuth();
+  // We'll need this to pass to the dashboard
 
   // We move the logout logic here, so it can be passed to the drawer
   const handleLogout = async () => {
@@ -20,7 +20,6 @@ export default function AppLayout() {
       Alert.alert('Error', error.message);
     }
   };
-
   return (
     <Drawer
       drawerContent={(props) => (
@@ -38,15 +37,18 @@ export default function AppLayout() {
       )}
       screenOptions={{
         drawerStyle: {
-          backgroundColor: '#1e1e1e',
-          width: 240,
+          backgroundColor: '#1e1e1e', //
+          width: 240, //
         },
-        drawerActiveTintColor: '#bb86fc',
-        drawerInactiveTintColor: '#fff',
+        drawerItemStyle: {
+          marginVertical: 5,
+        },
+        drawerActiveTintColor: '#bb86fc', //
+        drawerInactiveTintColor: '#fff', //
         headerStyle: {
-          backgroundColor: '#1e1e1e',
+          backgroundColor: '#1e1e1e', //
         },
-        headerTintColor: '#fff',
+        headerTintColor: '#fff', //
       }}>
       <Drawer.Screen
         name="index" // This is the Dashboard screen

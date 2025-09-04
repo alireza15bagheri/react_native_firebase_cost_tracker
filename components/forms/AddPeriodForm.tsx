@@ -10,7 +10,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 
 interface AddPeriodFormProps {
@@ -21,7 +21,10 @@ interface AddPeriodFormProps {
 
 // Helper to format date as YYYY-MM-DD
 const formatDate = (date: Date) => {
-  return date.toISOString().split('T')[0];
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 export default function AddPeriodForm({ userId, onPeriodAdded, onClose }: AddPeriodFormProps) {
@@ -32,13 +35,17 @@ export default function AddPeriodForm({ userId, onPeriodAdded, onClose }: AddPer
   const [showDatePicker, setShowDatePicker] = useState<'start' | 'end' | null>(null);
 
   const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-    const currentDate = selectedDate || (showDatePicker === 'start' ? startDate : endDate);
-    setShowDatePicker(null); // Hide picker on all platforms
-    if (currentDate) {
+    setShowDatePicker(null); // Hide the picker immediately
+
+    // Only proceed if the user confirmed a date and a date object exists
+    if (event.type === 'set' && selectedDate) {
+      // Create a new Date object to ensure it's a stable JS instance
+      const newDate = new Date(selectedDate);
+
       if (showDatePicker === 'start') {
-        setStartDate(currentDate);
+        setStartDate(newDate);
       } else {
-        setEndDate(currentDate);
+        setEndDate(newDate);
       }
     }
   };
@@ -83,18 +90,20 @@ export default function AddPeriodForm({ userId, onPeriodAdded, onClose }: AddPer
       />
 
       <TouchableOpacity style={styles.dateButton} onPress={() => setShowDatePicker('start')}>
-        <Text style={styles.dateButtonText}>{startDate ? formatDate(startDate) : 'Select Start Date'}</Text>
+        <Text style={styles.dateButtonText} numberOfLines={1} adjustsFontSizeToFit>
+          {startDate ? formatDate(startDate) : 'Select Start Date'}
+        </Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.dateButton} onPress={() => setShowDatePicker('end')}>
-        <Text style={styles.dateButtonText}>{endDate ? formatDate(endDate) : 'Select End Date'}</Text>
+        <Text style={styles.dateButtonText} numberOfLines={1} adjustsFontSizeToFit>
+          {endDate ? formatDate(endDate) : 'Select End Date'}
+        </Text>
       </TouchableOpacity>
 
       {showDatePicker && (
         <RNDateTimePicker
-          value={
-            (showDatePicker === 'start' ? startDate : endDate) || new Date()
-          }
+          value={(showDatePicker === 'start' ? startDate : endDate) || new Date()}
           mode="date"
           display="default"
           onChange={handleDateChange}
@@ -139,7 +148,7 @@ const styles = StyleSheet.create({
   },
   dateButton: {
     backgroundColor: '#2b2b2b',
-    padding: 15,
+    paddingVertical: 15,
     borderRadius: 10,
     marginBottom: 15,
     width: '100%',
@@ -149,7 +158,8 @@ const styles = StyleSheet.create({
   },
   dateButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 25,
+    textAlign: 'center',
   },
   modalButtonContainer: {
     flexDirection: 'row',

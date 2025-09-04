@@ -1,3 +1,4 @@
+// components/ui/AppModal.tsx
 import { BlurView } from 'expo-blur';
 import React from 'react';
 import { Modal, StyleSheet, View } from 'react-native';
@@ -30,7 +31,8 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: '#1e1e1e',
-    padding: 22,
+    paddingVertical: 22,
+    paddingHorizontal: 15,
     borderRadius: 14,
     width: '90%',
     alignItems: 'center',
