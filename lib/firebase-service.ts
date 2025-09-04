@@ -34,6 +34,11 @@ export const updatePeriodDailyLimit = async (periodId: string, daily_limit: numb
   await updateDoc(periodRef, { daily_limit });
 };
 
+export const updatePeriodNotes = async (periodId: string, notes: string) => {
+  const periodRef = doc(db, 'periods', periodId);
+  await updateDoc(periodRef, { notes });
+};
+
 export const deletePeriod = async (periodId: string, userId: string) => {
   const batch = writeBatch(db);
 

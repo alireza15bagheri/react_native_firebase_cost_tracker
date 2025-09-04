@@ -3,6 +3,7 @@ import DailyCostList from '@/components/DailyCostList';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardModals from '@/components/dashboard/DashboardModals';
 import PeriodManager from '@/components/dashboard/PeriodManager';
+import NotesSection from '@/components/NotesSection';
 import { ThemedView } from '@/components/ThemedView';
 import TransactionList from '@/components/TransactionList';
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -13,7 +14,16 @@ import { getDaysInPeriod } from '@/utils/helpers';
 import { DrawerActions, useNavigation } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 export default function DashboardScreen() {
   const navigation = useNavigation();
@@ -40,6 +50,7 @@ export default function DashboardScreen() {
     loading,
     loadingData,
     handleSetDailyLimit,
+    handleSaveNotes,
     handleDeletePeriod,
     handleDeleteIncome,
     handleDeleteBudget,
@@ -93,104 +104,110 @@ export default function DashboardScreen() {
   return (
     <ThemedView style={styles.safeArea}>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.container}>
-          <DashboardHeader
-            activePeriodId={activePeriodId}
-            onAddIncome={() => setModalVisible('income')}
-            onAddBudget={() => setModalVisible('budget')}
-          />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}>
+          <ScrollView contentContainerStyle={styles.container}>
+            <DashboardHeader
+              activePeriodId={activePeriodId}
+              onAddIncome={() => setModalVisible('income')}
+              onAddBudget={() => setModalVisible('budget')}
+            />
 
-          {loading ? (
-            <ActivityIndicator size="large" color="#fff" style={{ marginTop: 20 }} />
-          ) : (
-            <>
-              <PeriodManager
-                periods={periods}
-                activePeriodId={activePeriodId}
-                onPeriodChange={setActivePeriodId}
-                onDeletePeriod={handleDeletePeriod}
-              />
+            {loading ? (
+              <ActivityIndicator size="large" color="#fff" style={{ marginTop: 20 }} />
+            ) : (
+              <>
+                <PeriodManager
+                  periods={periods}
+                  activePeriodId={activePeriodId}
+                  onPeriodChange={setActivePeriodId}
+                  onDeletePeriod={handleDeletePeriod}
+                />
 
-              {loadingData ? (
-                <ActivityIndicator size="large" color="#fff" style={{ marginTop: 20 }} />
-              ) : (
-                activePeriodId && (
-                  <>
-                    <TransactionList
-                      title="Incomes"
-                      items={incomes.map((i) => ({ id: i.id, name: i.source, amount: i.amount }))}
-                      emptyMessage="No incomes added for this period."
-                      onDelete={handleDeleteIncome}
-                    />
-                    <TransactionList
-                      title="Budgets"
-                      items={budgets.map((b) => ({
-                        id: b.id,
-                        name: b.name,
-                        amount: b.amount_allocated,
-                      }))}
-                      emptyMessage="No budgets added for this period."
-                      onDelete={handleDeleteBudget}
-                    />
-                    <View style={styles.summaryContainer}>
-                      <Text style={styles.summaryText}>Remaining after Budgets Costs:</Text>
-                      <Text
-                        style={[
-                          styles.summaryAmount,
-                          { color: remainderAmount >= 0 ? '#4caf50' : '#f44336' },
-                        ]}>
-                        {formatAmount(remainderAmount)}
-                      </Text>
-                    </View>
+                {loadingData ? (
+                  <ActivityIndicator size="large" color="#fff" style={{ marginTop: 20 }} />
+                ) : (
+                  activePeriodId && (
+                    <>
+                      <TransactionList
+                        title="Incomes"
+                        items={incomes.map((i) => ({ id: i.id, name: i.source, amount: i.amount }))}
+                        emptyMessage="No incomes added for this period."
+                        onDelete={handleDeleteIncome}
+                      />
+                      <TransactionList
+                        title="Budgets"
+                        items={budgets.map((b) => ({
+                          id: b.id,
+                          name: b.name,
+                          amount: b.amount_allocated,
+                        }))}
+                        emptyMessage="No budgets added for this period."
+                        onDelete={handleDeleteBudget}
+                      />
+                      <View style={styles.summaryContainer}>
+                        <Text style={styles.summaryText}>Remaining after Budgets Costs:</Text>
+                        <Text
+                          style={[
+                            styles.summaryAmount,
+                            { color: remainderAmount >= 0 ? '#4caf50' : '#f44336' },
+                          ]}>
+                          {formatAmount(remainderAmount)}
+                        </Text>
+                      </View>
 
-                    <DailyCostList
-                      period={activePeriod}
-                      dailyCosts={dailyCosts}
-                      onSetLimit={() => setModalVisible('dailyLimit')}
-                      onAddCost={() => setModalVisible('dailyCost')}
-                      onDelete={handleDeleteDailyCost}
-                    />
+                      <DailyCostList
+                        period={activePeriod}
+                        dailyCosts={dailyCosts}
+                        onSetLimit={() => setModalVisible('dailyLimit')}
+                        onAddCost={() => setModalVisible('dailyCost')}
+                        onDelete={handleDeleteDailyCost}
+                      />
 
-                    <View style={styles.summaryContainer}>
-                      <Text style={styles.summaryText}>Remaining after Daily Costs:</Text>
-                      <Text
-                        style={[
-                          styles.summaryAmount,
-                          { color: dailyCostRemainder >= 0 ? '#4caf50' : '#f44336' },
-                        ]}>
-                        {formatAmount(dailyCostRemainder)}
-                      </Text>
-                    </View>
+                      <View style={styles.summaryContainer}>
+                        <Text style={styles.summaryText}>Remaining after Daily Costs:</Text>
+                        <Text
+                          style={[
+                            styles.summaryAmount,
+                            { color: dailyCostRemainder >= 0 ? '#4caf50' : '#f44336' },
+                          ]}>
+                          {formatAmount(dailyCostRemainder)}
+                        </Text>
+                      </View>
 
-                    <TransactionList
-                      title="Miscellaneous Costs"
-                      items={miscellaneousCosts.map((c) => ({
-                        id: c.id,
-                        name: c.title,
-                        amount: c.amount,
-                      }))}
-                      emptyMessage="No miscellaneous costs added."
-                      onDelete={handleDeleteMiscellaneousCost}
-                      onAddItem={() => setModalVisible('miscellaneousCost')}
-                      addItemButtonText="+ Add Miscellaneous Cost"
-                    />
+                      <TransactionList
+                        title="Miscellaneous Costs"
+                        items={miscellaneousCosts.map((c) => ({
+                          id: c.id,
+                          name: c.title,
+                          amount: c.amount,
+                        }))}
+                        emptyMessage="No miscellaneous costs added."
+                        onDelete={handleDeleteMiscellaneousCost}
+                        onAddItem={() => setModalVisible('miscellaneousCost')}
+                        addItemButtonText="+ Add Miscellaneous Cost"
+                      />
 
-                    <View style={styles.summaryContainer}>
-                      <Text style={styles.summaryText}>Final Remainder:</Text>
-                      <Text
-                        style={[
-                          styles.summaryAmount,
-                          { color: finalRemainder >= 0 ? '#4caf50' : '#f44336' },
-                        ]}>
-                        {formatAmount(finalRemainder)}
-                      </Text>
-                    </View>
-                  </>
-                )
-              )}
-            </>
-          )}
-        </ScrollView>
+                      <View style={styles.summaryContainer}>
+                        <Text style={styles.summaryText}>Final Remainder:</Text>
+                        <Text
+                          style={[
+                            styles.summaryAmount,
+                            { color: finalRemainder >= 0 ? '#4caf50' : '#f44336' },
+                          ]}>
+                          {formatAmount(finalRemainder)}
+                        </Text>
+                      </View>
+
+                      <NotesSection period={activePeriod} onSave={handleSaveNotes} />
+                    </>
+                  )
+                )}
+              </>
+            )}
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
 
       <DashboardModals

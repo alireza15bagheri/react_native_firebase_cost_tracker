@@ -6,6 +6,7 @@ export interface Period {
   end_date: string;
   userId: string;
   daily_limit?: number;
+  notes?: string;
 }
 
 export interface Income {

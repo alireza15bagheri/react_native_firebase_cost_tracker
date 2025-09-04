@@ -12,6 +12,7 @@ import {
   getMiscellaneousCostsForPeriod,
   getPeriods,
   updatePeriodDailyLimit,
+  updatePeriodNotes,
 } from '@/lib/firebase-service';
 import { Budget, DailyCost, Income, MiscellaneousCost, Period } from '@/types/data';
 import { useEffect, useState } from 'react';
@@ -90,6 +91,17 @@ export default function useDashboardData() {
       Alert.alert('Success', 'Daily limit updated successfully.');
     } catch (error) {
       Alert.alert('Error', 'Failed to update daily limit.');
+      console.error(error);
+    }
+  };
+
+  const handleSaveNotes = async (periodId: string, notes: string) => {
+    try {
+      await updatePeriodNotes(periodId, notes);
+      await fetchPeriods(); // Refetch to ensure local data is up-to-date
+      Alert.alert('Success', 'Notes saved successfully.');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to save notes.');
       console.error(error);
     }
   };
@@ -210,6 +222,7 @@ export default function useDashboardData() {
     loading,
     loadingData,
     handleSetDailyLimit,
+    handleSaveNotes,
     handleDeletePeriod,
     handleDeleteIncome,
     handleDeleteBudget,
