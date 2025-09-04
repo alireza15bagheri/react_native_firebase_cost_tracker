@@ -1,6 +1,6 @@
-// components/forms/AddPeriodForm.tsx
-import { addPeriod } from '@/lib/firebase-service';
-import { Period } from '@/types/data';
+// components/forms/AddDailyCostForm.tsx
+import { addDailyCost } from '@/lib/firebase-service';
+import { DailyCost, Period } from '@/types/data';
 import RNDateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useState } from 'react';
 import {
@@ -13,60 +13,67 @@ import {
   View,
 } from 'react-native';
 
-interface AddPeriodFormProps {
+interface AddDailyCostFormProps {
   userId: string;
-  onPeriodAdded: (newPeriod: Period) => void;
+  period: Period;
+  onCostAdded: (newCost: DailyCost) => void;
   onClose: () => void;
 }
 
-// Helper to format date as YYYY-MM-DD
 const formatDate = (date: Date) => {
   const year = date.getFullYear();
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
   const day = date.getDate().toString().padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
-export default function AddPeriodForm({ userId, onPeriodAdded, onClose }: AddPeriodFormProps) {
-  const [name, setName] = useState('');
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const [loading, setLoading] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState<'start' | 'end' | null>(null);
 
+export default function AddDailyCostForm({
+  userId,
+  period,
+  onCostAdded,
+  onClose,
+}: AddDailyCostFormProps) {
+  const [date, setDate] = useState<Date>(new Date());
+  const [spent, setSpent] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-    setShowDatePicker(null); // Hide the picker immediately
+    setShowDatePicker(false); // Hide the picker immediately
 
     // Only proceed if the user confirmed a date and a date object exists
     if (event.type === 'set' && selectedDate) {
       // Create a new Date object to ensure it's a stable JS instance
       const newDate = new Date(selectedDate);
-      if (showDatePicker === 'start') {
-        setStartDate(newDate);
-      } else {
-        setEndDate(newDate);
-      }
+      setDate(newDate);
     }
   };
+
   const handleSubmit = async () => {
-    if (!name.trim() || !startDate || !endDate) {
-      Alert.alert('Error', 'Please fill all fields.');
+    const spentAmount = parseFloat(spent);
+    if (isNaN(spentAmount) || spentAmount < 0) {
+      Alert.alert('Error', 'Please enter a valid, non-negative amount.');
       return;
     }
 
-    if (endDate < startDate) {
-      Alert.alert('Error', 'End date cannot be before the start date.');
+    // Date validation rule
+    const formattedSelectedDate = formatDate(date);
+    if (formattedSelectedDate < period.start_date || formattedSelectedDate > period.end_date) {
+      Alert.alert(
+        'Invalid Date',
+        `The selected date must be between ${period.start_date} and ${period.end_date}.`
+      );
       return;
     }
 
     setLoading(true);
     try {
-      const newPeriod = await addPeriod({
-        name: name.trim(),
-        start_date: formatDate(startDate),
-        end_date: formatDate(endDate),
+      const newCost = await addDailyCost({
+        date: formatDate(date),
+        spent: spentAmount,
         userId,
+        periodId: period.id,
       });
-      onPeriodAdded(newPeriod as Period);
+      onCostAdded(newCost as DailyCost);
       onClose();
     } catch (error: any) {
       Alert.alert('Error', error.message);
@@ -76,46 +83,33 @@ export default function AddPeriodForm({ userId, onPeriodAdded, onClose }: AddPer
   };
   return (
     <>
-      <Text style={styles.modalTitle}>Add New Period</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Period Name"
-        value={name}
-        onChangeText={setName}
-        placeholderTextColor="#888"
-      />
-
-      <TouchableOpacity style={styles.dateButton} onPress={() => setShowDatePicker('start')}>
+      <Text style={styles.modalTitle}>Add Daily Cost</Text>
+      <TouchableOpacity style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
         <Text style={styles.dateButtonText} numberOfLines={1} adjustsFontSizeToFit>
-          {startDate ? formatDate(startDate) : 'Select Start Date'}
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.dateButton} onPress={() => setShowDatePicker('end')}>
-        <Text style={styles.dateButtonText} numberOfLines={1} adjustsFontSizeToFit>
-          {endDate ? formatDate(endDate) : 'Select End Date'}
+          {formatDate(date)}
         </Text>
       </TouchableOpacity>
 
       {showDatePicker && (
-        <RNDateTimePicker
-          value={(showDatePicker === 'start' ? startDate : endDate) || new Date()}
-          mode="date"
-          display="default"
-          onChange={handleDateChange}
-        />
+        <RNDateTimePicker value={date} mode="date" display="default" onChange={handleDateChange} />
       )}
 
+      <TextInput
+        style={styles.input}
+        placeholder="Amount Spent"
+        value={spent}
+        onChangeText={setSpent}
+        keyboardType="numeric"
+        placeholderTextColor="#888"
+      />
       {loading ? (
         <ActivityIndicator size="large" color="#fff" />
       ) : (
         <View style={styles.modalButtonContainer}>
           <TouchableOpacity style={styles.modalButton} onPress={handleSubmit}>
-            <Text style={styles.modalButtonText}>Add Period</Text>
+            <Text style={styles.modalButtonText}>Add Cost</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.modalButton, styles.cancelButton]}
-            onPress={onClose}>
+          <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={onClose}>
             <Text style={styles.modalButtonText}>Cancel</Text>
           </TouchableOpacity>
         </View>
@@ -154,7 +148,7 @@ const styles = StyleSheet.create({
   },
   dateButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 20,
     textAlign: 'center',
   },
   modalButtonContainer: {

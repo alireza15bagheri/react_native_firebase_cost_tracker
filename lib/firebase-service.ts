@@ -6,6 +6,7 @@ import {
   doc,
   getDocs,
   query,
+  updateDoc,
   where,
   writeBatch,
 } from 'firebase/firestore';
@@ -28,11 +29,15 @@ export const getPeriods = async (userId: string) => {
   return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 };
 
+export const updatePeriodDailyLimit = async (periodId: string, daily_limit: number) => {
+  const periodRef = doc(db, 'periods', periodId);
+  await updateDoc(periodRef, { daily_limit });
+};
+
 export const deletePeriod = async (periodId: string, userId: string) => {
   // Firestore security rules for batched writes can be tricky.
   // A more reliable pattern is to fetch the documents to be deleted first,
   // then add them to a batch.
-
   // 1. Find associated incomes
   const incomesQuery = query(
     collection(db, 'incomes'),
@@ -49,17 +54,24 @@ export const deletePeriod = async (periodId: string, userId: string) => {
   );
   const budgetsSnapshot = await getDocs(budgetsQuery);
 
-  // 3. Create a batch and add all delete operations
+  // 3. Find associated daily costs
+  const dailyCostsQuery = query(
+    collection(db, 'daily_costs'),
+    where('userId', '==', userId),
+    where('periodId', '==', periodId)
+  );
+  const dailyCostsSnapshot = await getDocs(dailyCostsQuery);
+
+  // 4. Create a batch and add all delete operations
   const batch = writeBatch(db);
   incomesSnapshot.forEach((doc) => batch.delete(doc.ref));
   budgetsSnapshot.forEach((doc) => batch.delete(doc.ref));
+  dailyCostsSnapshot.forEach((doc) => batch.delete(doc.ref));
   batch.delete(doc(db, 'periods', periodId));
 
-  // 4. Commit the batch
+  // 5. Commit the batch
   await batch.commit();
 };
-
-
 // --- Incomes ---
 export const addIncome = async (incomeData: {
   periodId: string;
@@ -80,11 +92,9 @@ export const getIncomesForPeriod = async (userId: string, periodId: string) => {
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 };
-
 export const deleteIncome = async (incomeId: string) => {
   await deleteDoc(doc(db, 'incomes', incomeId));
 };
-
 // --- Budgets ---
 export const addBudget = async (budgetData: {
   periodId: string;
@@ -106,7 +116,31 @@ export const getBudgetsForPeriod = async (userId: string, periodId: string) => {
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 };
-
 export const deleteBudget = async (budgetId: string) => {
   await deleteDoc(doc(db, 'budgets', budgetId));
+};
+
+// --- Daily Costs ---
+export const addDailyCost = async (costData: {
+  periodId: string;
+  date: string;
+  spent: number;
+  userId: string;
+}) => {
+  const docRef = await addDoc(collection(db, 'daily_costs'), costData);
+  return { id: docRef.id, ...costData };
+};
+
+export const getDailyCostsForPeriod = async (userId: string, periodId: string) => {
+  const q = query(
+    collection(db, 'daily_costs'),
+    where('userId', '==', userId),
+    where('periodId', '==', periodId)
+  );
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+};
+
+export const deleteDailyCost = async (costId: string) => {
+  await deleteDoc(doc(db, 'daily_costs', costId));
 };

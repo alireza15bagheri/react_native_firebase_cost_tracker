@@ -1,30 +1,27 @@
 // app/(tabs)/index.tsx
-import BudgetList from '@/components/BudgetList';
+import DailyCostList from '@/components/DailyCostList';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardModals from '@/components/dashboard/DashboardModals';
 import PeriodManager from '@/components/dashboard/PeriodManager';
-import IncomeList from '@/components/IncomeList';
 import { ThemedView } from '@/components/ThemedView';
+import TransactionList from '@/components/TransactionList';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import useDashboardData from '@/hooks/useDashboardData';
 import { styles } from '@/styles/screens/DashboardStyles';
+import { formatAmount } from '@/utils/formatters';
+import { getDaysInPeriod } from '@/utils/helpers';
 import { DrawerActions, useNavigation } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
-const formatAmount = (amount: number) => {
-  // Round the number to the nearest whole number.
-  const numAsString = Math.round(amount).toString();
-  // Use a regular expression to insert commas as thousands separators from the right.
-  return numAsString.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-};
-
 export default function DashboardScreen() {
   const navigation = useNavigation();
   const params = useLocalSearchParams();
   const router = useRouter();
-  const [modalVisible, setModalVisible] = useState<'period' | 'income' | 'budget' | null>(null);
+  const [modalVisible, setModalVisible] = useState<
+    'period' | 'income' | 'budget' | 'dailyLimit' | 'dailyCost' | null
+  >(null);
 
   const {
     user,
@@ -36,11 +33,15 @@ export default function DashboardScreen() {
     setIncomes,
     budgets,
     setBudgets,
+    dailyCosts,
+    setDailyCosts,
     loading,
     loadingData,
+    handleSetDailyLimit,
     handleDeletePeriod,
     handleDeleteIncome,
     handleDeleteBudget,
+    handleDeleteDailyCost,
   } = useDashboardData();
 
   useEffect(() => {
@@ -63,15 +64,25 @@ export default function DashboardScreen() {
     }
   }, [params]);
 
-  const { totalIncomes, totalBudgets, remainderAmount } = useMemo(() => {
+  const { activePeriod, remainderAmount, finalRemainder } = useMemo(() => {
+    const period = periods.find((p) => p.id === activePeriodId);
     const tIncomes = incomes.reduce((sum, income) => sum + income.amount, 0);
     const tBudgets = budgets.reduce((sum, budget) => sum + budget.amount_allocated, 0);
+    const remainder = tIncomes - tBudgets;
+
+    let final = remainder;
+    if (period) {
+      const daysInPeriod = getDaysInPeriod(period.start_date, period.end_date);
+      const totalDailyLimit = (period.daily_limit || 0) * daysInPeriod;
+      final = remainder - totalDailyLimit;
+    }
+
     return {
-      totalIncomes: tIncomes,
-      totalBudgets: tBudgets,
-      remainderAmount: tIncomes - tBudgets,
+      activePeriod: period,
+      remainderAmount: remainder,
+      finalRemainder: final,
     };
-  }, [incomes, budgets]);
+  }, [incomes, budgets, periods, activePeriodId]);
 
   return (
     <ThemedView style={styles.safeArea}>
@@ -99,8 +110,22 @@ export default function DashboardScreen() {
               ) : (
                 activePeriodId && (
                   <>
-                    <IncomeList incomes={incomes} onDelete={handleDeleteIncome} />
-                    <BudgetList budgets={budgets} onDelete={handleDeleteBudget} />
+                    <TransactionList
+                      title="Incomes"
+                      items={incomes.map((i) => ({ id: i.id, name: i.source, amount: i.amount }))}
+                      emptyMessage="No incomes added for this period."
+                      onDelete={handleDeleteIncome}
+                    />
+                    <TransactionList
+                      title="Budgets"
+                      items={budgets.map((b) => ({
+                        id: b.id,
+                        name: b.name,
+                        amount: b.amount_allocated,
+                      }))}
+                      emptyMessage="No budgets added for this period."
+                      onDelete={handleDeleteBudget}
+                    />
                     <View style={styles.summaryContainer}>
                       <Text style={styles.summaryText}>Remaining after Budgets Costs:</Text>
                       <Text
@@ -109,6 +134,25 @@ export default function DashboardScreen() {
                           { color: remainderAmount >= 0 ? '#4caf50' : '#f44336' },
                         ]}>
                         {formatAmount(remainderAmount)}
+                      </Text>
+                    </View>
+
+                    <DailyCostList
+                      period={activePeriod}
+                      dailyCosts={dailyCosts}
+                      onSetLimit={() => setModalVisible('dailyLimit')}
+                      onAddCost={() => setModalVisible('dailyCost')}
+                      onDelete={handleDeleteDailyCost}
+                    />
+
+                    <View style={styles.summaryContainer}>
+                      <Text style={styles.summaryText}>Remaining after Daily Costs:</Text>
+                      <Text
+                        style={[
+                          styles.summaryAmount,
+                          { color: finalRemainder >= 0 ? '#4caf50' : '#f44336' },
+                        ]}>
+                        {formatAmount(finalRemainder)}
                       </Text>
                     </View>
                   </>
@@ -123,7 +167,7 @@ export default function DashboardScreen() {
         modalVisible={modalVisible}
         onClose={() => setModalVisible(null)}
         user={user}
-        activePeriodId={activePeriodId}
+        activePeriod={activePeriod}
         onPeriodAdded={(newPeriod) => {
           setPeriods((prev) => [...prev, newPeriod]);
           setActivePeriodId(newPeriod.id);
@@ -134,6 +178,10 @@ export default function DashboardScreen() {
         onBudgetAdded={(newBudget) => {
           setBudgets((prev) => [...prev, newBudget]);
         }}
+        onDailyCostAdded={(newCost) => {
+          setDailyCosts((prev) => [...prev, newCost]);
+        }}
+        onSetDailyLimit={handleSetDailyLimit}
       />
     </ThemedView>
   );

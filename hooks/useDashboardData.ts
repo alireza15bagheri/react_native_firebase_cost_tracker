@@ -1,13 +1,17 @@
+// hooks/useDashboardData.ts
 import { useAuth } from '@/context/AuthContext';
 import {
-    deleteBudget,
-    deleteIncome,
-    deletePeriod,
-    getBudgetsForPeriod,
-    getIncomesForPeriod,
-    getPeriods,
+  deleteBudget,
+  deleteDailyCost,
+  deleteIncome,
+  deletePeriod,
+  getBudgetsForPeriod,
+  getDailyCostsForPeriod,
+  getIncomesForPeriod,
+  getPeriods,
+  updatePeriodDailyLimit,
 } from '@/lib/firebase-service';
-import { Budget, Income, Period } from '@/types/data';
+import { Budget, DailyCost, Income, Period } from '@/types/data';
 import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 
@@ -16,26 +20,24 @@ export default function useDashboardData() {
   const [periods, setPeriods] = useState<Period[]>([]);
   const [activePeriodId, setActivePeriodId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [dailyCosts, setDailyCosts] = useState<DailyCost[]>([]);
   const [loadingData, setLoadingData] = useState(false);
-
   useEffect(() => {
     if (user) {
       fetchPeriods();
     }
   }, [user]);
-
   useEffect(() => {
     if (user && activePeriodId) {
       fetchIncomesAndBudgets(activePeriodId);
     } else {
       setIncomes([]);
       setBudgets([]);
+      setDailyCosts([]);
     }
   }, [user, activePeriodId]);
-
   const fetchPeriods = async () => {
     if (!user) return;
     setLoading(true);
@@ -57,21 +59,34 @@ export default function useDashboardData() {
       setLoading(false);
     }
   };
-
   const fetchIncomesAndBudgets = async (periodId: string) => {
     if (!user) return;
     setLoadingData(true);
     try {
-      const [userIncomes, userBudgets] = await Promise.all([
+      const [userIncomes, userBudgets, userDailyCosts] = await Promise.all([
         getIncomesForPeriod(user.uid, periodId),
         getBudgetsForPeriod(user.uid, periodId),
+        getDailyCostsForPeriod(user.uid, periodId),
       ]);
       setIncomes(userIncomes as Income[]);
       setBudgets(userBudgets as Budget[]);
+      setDailyCosts(userDailyCosts as DailyCost[]);
     } catch (error) {
-      console.error('Failed to fetch incomes/budgets:', error);
+      console.error('Failed to fetch incomes/budgets/costs:', error);
     } finally {
       setLoadingData(false);
+    }
+  };
+
+  const handleSetDailyLimit = async (periodId: string, limit: number) => {
+    try {
+      await updatePeriodDailyLimit(periodId, limit);
+      // Refetch periods to get the updated data
+      await fetchPeriods();
+      Alert.alert('Success', 'Daily limit updated successfully.');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update daily limit.');
+      console.error(error);
     }
   };
 
@@ -138,6 +153,24 @@ export default function useDashboardData() {
     ]);
   };
 
+  const handleDeleteDailyCost = (costId: string) => {
+    Alert.alert('Delete Daily Cost', 'Are you sure?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteDailyCost(costId);
+            setDailyCosts((prev) => prev.filter((c) => c.id !== costId));
+          } catch (error) {
+            Alert.alert('Error', 'Failed to delete daily cost.');
+          }
+        },
+      },
+    ]);
+  };
+
   return {
     user,
     periods,
@@ -148,10 +181,14 @@ export default function useDashboardData() {
     setIncomes,
     budgets,
     setBudgets,
+    dailyCosts,
+    setDailyCosts,
     loading,
     loadingData,
+    handleSetDailyLimit,
     handleDeletePeriod,
     handleDeleteIncome,
     handleDeleteBudget,
+    handleDeleteDailyCost,
   };
 }

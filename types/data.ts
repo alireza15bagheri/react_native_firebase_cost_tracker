@@ -5,6 +5,7 @@ export interface Period {
   start_date: string;
   end_date: string;
   userId: string;
+  daily_limit?: number;
 }
 
 export interface Income {
@@ -22,4 +23,12 @@ export interface Budget {
   amount_allocated: number;
   status: 'paid' | 'not_paid';
   userId: string;
+}
+
+export interface DailyCost {
+  id: string;
+  periodId: string;
+  userId: string;
+  date: string; // YYYY-MM-DD
+  spent: number;
 }
