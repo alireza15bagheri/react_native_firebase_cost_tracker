@@ -1,48 +1,65 @@
 // app/(tabs)/_layout.tsx
-import { Tabs } from 'expo-router';
-import React from 'react';
-import { Platform } from 'react-native';
+import CustomDrawerContent from '@/components/navigation/CustomDrawerContent';
+import { useAuth } from '@/context/AuthContext';
+import { auth } from '@/lib/firebase';
+import { Drawer } from 'expo-router/drawer';
+import { signOut } from 'firebase/auth';
+import { Alert } from 'react-native';
 
-import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+// This is required for the drawer navigator to work
+import 'react-native-gesture-handler';
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+export default function AppLayout() {
+  const { user } = useAuth(); // We'll need this to pass to the dashboard
+
+  // We move the logout logic here, so it can be passed to the drawer
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error: any) {
+      Alert.alert('Error', error.message);
+    }
+  };
 
   return (
-    <Tabs
+    <Drawer
+      drawerContent={(props) => (
+        <CustomDrawerContent
+          {...props}
+          // We will pass a function to open the modal from the dashboard
+          // The dashboard will handle the modal state
+          onNewPeriod={() => {
+            // This is a bit of a trick to pass an event up.
+            // We can listen for this in the Dashboard screen.
+            props.navigation.navigate('index', { openNewPeriodModal: true });
+          }}
+          onLogout={handleLogout}
+        />
+      )}
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            position: 'absolute',
-          },
-          default: {
-            backgroundColor: Colors[colorScheme ?? 'light'].tabBar,
-            borderTopColor: Colors[colorScheme ?? 'light'].tabBarBorder,
-          },
-        }),
+        drawerStyle: {
+          backgroundColor: '#1e1e1e',
+          width: 240,
+        },
+        drawerActiveTintColor: '#bb86fc',
+        drawerInactiveTintColor: '#fff',
+        headerStyle: {
+          backgroundColor: '#1e1e1e',
+        },
+        headerTintColor: '#fff',
       }}>
-      <Tabs.Screen
-        name="index"
+      <Drawer.Screen
+        name="index" // This is the Dashboard screen
         options={{
           title: 'Dashboard',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="list.bullet.rectangle.portrait.fill" color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="settings"
+      <Drawer.Screen
+        name="settings" // This is the Settings screen
         options={{
           title: 'Settings',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="gearshape.fill" color={color} />,
         }}
       />
-    </Tabs>
+    </Drawer>
   );
 }

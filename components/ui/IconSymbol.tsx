@@ -15,14 +15,10 @@ type IconSymbolName = keyof typeof MAPPING;
  * - see SF Symbols in the [SF Symbols](https://developer.apple.com/sf-symbols/) app.
  */
 const MAPPING = {
-  // --- Old Icons ---
-  'house.fill': 'home',
-  'paperplane.fill': 'send',
-  'chevron.left.forwardslash.chevron.right': 'code',
-  'chevron.right': 'chevron-right',
   // --- New Icons for Cost Tracker ---
   'list.bullet.rectangle.portrait.fill': 'dashboard',
   'gearshape.fill': 'settings',
+  'line.3.horizontal': 'menu', // Added for the drawer toggle
 } as IconMapping;
 
 /**
